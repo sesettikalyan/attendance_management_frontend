@@ -38,7 +38,7 @@ const StaffAttendanceLogs = () => {
     return (
         <div className="flex flex-col justify-center items-center bg-gray-50">
             <div className="w-full mt-[5%]  bg-red-400 text-white text-center py-6 text-4xl font-bold">
-                My Attendance Logs
+                Attendance Logs
             </div>
             <div className="overflow-x-auto mt-[3%] w-[90%]">
                 {attendance.length === 0 ? (

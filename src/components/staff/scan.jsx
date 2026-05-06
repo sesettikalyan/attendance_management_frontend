@@ -57,74 +57,106 @@ const FaceComparison = () => {
   };
 
   const handleCaptureAndCompare = async () => {
-    console.log("Capturing image from webcam...");
-    const capturedImage = webcamRef.current.getScreenshot();
-    if (!capturedImage) {
-      alert("Failed to capture image from webcam.");
-      return;
-    }
+  console.log("Capturing image from webcam...");
 
-    const storageRef = ref(
-      storage,
-      `attendance-management/images/${Date.now()}.jpg`
-    );
-    console.log("Uploading captured image to Firebase...");
+  const capturedImage = webcamRef.current.getScreenshot();
 
-    setLoading(true); // Set loading state to true
+  if (!capturedImage) {
+    alert("Failed to capture image from webcam.");
+    return;
+  }
 
-    try {
-      // Convert Base64 to Blob and upload
-      const base64ToBlob = (base64Data) => {
-        const byteString = atob(base64Data.split(",")[1]);
-        const mimeString = base64Data.split(",")[0].split(":")[1].split(";")[0];
-        const arrayBuffer = new ArrayBuffer(byteString.length);
-        const uint8Array = new Uint8Array(arrayBuffer);
+  setLoading(true);
 
-        for (let i = 0; i < byteString.length; i++) {
-          uint8Array[i] = byteString.charCodeAt(i);
-        }
+  try {
+    // Convert Base64 → Blob
+    const base64ToBlob = (base64Data) => {
+      const byteString = atob(base64Data.split(",")[1]);
 
-        return new Blob([arrayBuffer], { type: mimeString });
-      };
-      const blob = base64ToBlob(capturedImage);
-      await uploadBytes(storageRef, blob);
+      const mimeString = base64Data
+        .split(",")[0]
+        .split(":")[1]
+        .split(";")[0];
 
-      const liveImageUrl = await getDownloadURL(storageRef);
-      console.log("Image uploaded successfully. URL:", liveImageUrl);
+      const arrayBuffer = new ArrayBuffer(byteString.length);
 
-      // Log URLs before sending to Face++
-      console.log("Stored Image URL:", storedImageUrl);
-      console.log("Live Image URL:", liveImageUrl);
+      const uint8Array = new Uint8Array(arrayBuffer);
 
-      // Send request to backend for face comparison
-      const response = await fetch(`${BASE_URL}/compare`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          storedImageUrl: storedImageUrl,
-          liveImageUrl,
-        }),
-      });
-
-      const result = await response.json();
-      setLoading(false); // Set loading state to false
-      if (result.success) {
-        setMatchResult("Faces Match!");
-        console.log("Faces match.");
-
-        markAttendance(liveImageUrl);
-      } else {
-        setMatchResult("Faces Do Not Match!");
-        console.log("Faces do not match:", result.error || result.message);
+      for (let i = 0; i < byteString.length; i++) {
+        uint8Array[i] = byteString.charCodeAt(i);
       }
-    } catch (error) {
-      console.error("Error during face comparison:", error);
-      alert("Error comparing faces.");
-      setLoading(false); // Set loading state to false
+
+      return new Blob([arrayBuffer], { type: mimeString });
+    };
+
+    const blob = base64ToBlob(capturedImage);
+
+    // Upload to ImgBB
+    const formData = new FormData();
+
+    formData.append(
+      "image",
+      capturedImage.split(",")[1] // Base64 only
+    );
+
+    console.log("Uploading captured image to ImgBB...");
+
+    const uploadResponse = await fetch(
+      "https://api.imgbb.com/1/upload?key=7f20d992d49267dbd68cdd67f61728b3",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const uploadData = await uploadResponse.json();
+
+    if (!uploadData.success) {
+      throw new Error("ImgBB upload failed");
     }
-  };
+
+    const liveImageUrl = uploadData.data.url;
+
+    console.log("Live Image URL:", liveImageUrl);
+
+    // Compare faces
+    const response = await fetch(`${BASE_URL}/compare`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        storedImageUrl,
+        liveImageUrl,
+      }),
+    });
+
+    const result = await response.json();
+
+    setLoading(false);
+
+    if (result.success) {
+      setMatchResult("Faces Match!");
+
+      console.log("Faces match.");
+
+      markAttendance(liveImageUrl);
+    } else {
+      setMatchResult("Faces Do Not Match!");
+
+      console.log(
+        "Faces do not match:",
+        result.error || result.message
+      );
+    }
+  } catch (error) {
+    console.error("Error during face comparison:", error);
+
+    alert("Error comparing faces.");
+
+    setLoading(false);
+  }
+};
 
   const handleScan = async (data) => {
     if (data) {

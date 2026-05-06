@@ -20,24 +20,35 @@ const Registration = () => {
   const navigate = useNavigate();
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const storageRef = ref(
-        storage,
-        `attendance-management/images/${file.name}`
+  const file = e.target.files[0];
+  if (file) {
+    console.log("Uploading file...", file.name);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch(
+        `https://api.imgbb.com/1/upload?key=7f20d992d49267dbd68cdd67f61728b3`,
+        {
+          method: "POST",
+          body: formData,
+        }
       );
-      console.log("Uploading file...", file.name);
-      try {
-        const snapshot = await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(snapshot.ref);
+
+      const data = await response.json();
+
+      if (data.success) {
+        const url = data.data.url;
         setFormData((prev) => ({ ...prev, photo: url }));
-        console.log("File uploaded successfully! Image URL: ", url);
-      } catch (error) {
-        console.error("Error uploading file:", error);
-      } finally {
+        console.log("File uploaded successfully! Image URL:", url);
+      } else {
+        console.error("Upload failed:", data.error);
       }
+    } catch (error) {
+      console.error("Error uploading file:", error);
     }
-  };
+  }
+};
 
   const handleChange = (e) => {
     const { name, value } = e.target;

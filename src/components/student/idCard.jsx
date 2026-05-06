@@ -18,34 +18,34 @@ const StudentIDCard = () => {
         setImage(studentImage);
 
         // Only call getProxiedImageUrl if the image URL is valid
-        if (studentImage) {
-          getProxiedImageUrl(studentImage);
-        }
+        // if (studentImage) {
+        //   getProxiedImageUrl(studentImage);
+        // }
       } catch (error) {
         console.error("Error fetching student details:", error);
       }
     };
 
-    const getProxiedImageUrl = async (url) => {
-      if (!url) {
-        console.error("No image URL provided");
-        return;
-      }
+    // const getProxiedImageUrl = async (url) => {
+    //   if (!url) {
+    //     console.error("No image URL provided");
+    //     return;
+    //   }
 
-      try {
-        const response = await fetch(
-          `${BASE_URL}/proxy?url=${encodeURIComponent(url)}`
-        );
-        const data = await response.json();
-        console.log(data);
-        const proxiedImageUrl = `${BASE_URL}${data.url}`;
-        console.log(proxiedImageUrl);
-        setImage(proxiedImageUrl); // Set the proxied image URL
-        console.log("Proxied image URL:", data.url);
-      } catch (error) {
-        console.error("Error fetching proxied image:", error);
-      }
-    };
+    //   try {
+    //     const response = await fetch(
+    //       `${BASE_URL}/proxy?url=${encodeURIComponent(url)}`
+    //     );
+    //     const data = await response.json();
+    //     console.log(data);
+    //     const proxiedImageUrl = `${BASE_URL}${data.url}`;
+    //     console.log(proxiedImageUrl);
+    //     setImage(proxiedImageUrl); // Set the proxied image URL
+    //     console.log("Proxied image URL:", data.url);
+    //   } catch (error) {
+    //     console.error("Error fetching proxied image:", error);
+    //   }
+    // };
 
     fetchStudentDetails();
   }, [studentId]);
